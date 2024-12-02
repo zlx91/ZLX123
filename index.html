@@ -189,13 +189,13 @@
             'B': []
         };
 
-        // 验证输入是否为长度为3的数字字符串的函数
 // 验证输入是否为长度为3的数字字符串的函数
 function isValidThreeDigitInput(input) {
+    if (input === "") {
+        return false;
+    }
     return typeof input === 'string' && input.length === 3 && /^\d+$/.test(input);
 }
-
-// 模拟后端的compare_strings函数逻辑，在前端进行数据处理
 function compareStrings(df) {
     let result_df = {
         'A': [],
@@ -221,7 +221,7 @@ function compareStrings(df) {
 
     for (let index = 0; index < df['A'].length; index++) {
         if (index < 3) {
-            // 前三行不进行计算，C、D、E、F、G、H、I、J、K、L、M、N列留空或设为None
+            // 前三行不进行计算，C、D、E、F、G、H、I、J、K、L、M、N、O、P列留空或设为None
             ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'].forEach(letter => {
                 result_df[letter].push(null);
             });
@@ -234,40 +234,49 @@ function compareStrings(df) {
                 let prev_a_nums = new Set(prev_a_str.split('').map(x => parseInt(x)));
                 all_a_nums_prev = new Set([...all_a_nums_prev, ...prev_a_nums]);
                 let prev_b_str = df['B'][i];
-                let prev_b_nums = new Set(prev_b_str.split('').map(x => parseInt(x)));
-                all_b_nums_prev = new Set([...all_b_nums_prev, ...prev_b_nums]);
+                if (prev_b_str !== null) {
+                    let prev_b_nums = new Set(prev_b_str.split('').map(x => parseInt(x)));
+                    all_b_nums_prev = new Set([...all_b_nums_prev, ...prev_b_nums]);
+                }
             }
 
-            let current_b_str = df['B'][index];
-          // 确保current_b_nums是数组类型，从df['B'][index]获取并处理
-            let current_b_nums = df['B'][index].split('').map(Number);
+            let current_b_nums = df['B'][index];
+            if (current_b_nums !== null) {
+                current_b_nums = current_b_nums.split('').map(Number);
 
-            // 统计交集元素个数，把重复元素当作多个来统计
-            let intersection_a_b = current_b_nums.reduce((acc, num) => {
-                if (all_a_nums_prev.has(num)) {
-                    acc[num] = (acc[num] || 0) + 1;
-                }
-                return acc;
-            }, {});
-            let totalIntersection_a_b = Object.values(intersection_a_b).reduce((sum, count) => sum + count, 0);
+                // 统计交集元素个数，把重复元素当作多个来统计
+                let intersection_a_b = current_b_nums.reduce((acc, num) => {
+                    if (all_a_nums_prev.has(num)) {
+                        acc[num] = (acc[num] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+                let totalIntersection_a_b = Object.values(intersection_a_b).reduce((sum, count) => sum + count, 0);
 
-            // 统计交集元素个数，把重复元素当作多个来统计（用于F列）
-            let intersection_b_b = current_b_nums.reduce((acc, num) => {
-                if (all_b_nums_prev.has(num)) {
-                    acc[num] = (acc[num] || 0) + 1;
-                }
-                return acc;
-            }, {});
-            let totalIntersection_b_b = Object.values(intersection_b_b).reduce((sum, count) => sum + count, 0);
+                // 统计交集元素个数，把重复元素当作多个来统计（用于F列）
+                let intersection_b_b = current_b_nums.reduce((acc, num) => {
+                    if (all_b_nums_prev.has(num)) {
+                        acc[num] = (acc[num] || 0) + 1;
+                    }
+                    return acc;
+                }, {});
+                let totalIntersection_b_b = Object.values(intersection_b_b).reduce((sum, count) => sum + count, 0);
 
-            // 计算交集并存储结果到D列，按照重复元素多次统计的结果
-            result_df['D'].push(totalIntersection_a_b);
+                // 计算交集并存储结果到D列，按照重复元素多次统计的结果
+                result_df['D'].push(totalIntersection_a_b);
 
-            // 计算交集并存储结果到F列，按照重复元素多次统计的结果
-            result_df['F'].push(totalIntersection_b_b);
-            // 计算交集并存储结果到H列，按照重复元素多次统计的结果
-            let intersection_count = [...current_b_nums].filter(num => all_a_nums_prev.has(num) && all_b_nums_prev.has(num)).length;
-            result_df['H'].push(intersection_count);
+                // 计算交集并存储结果到F列，按照重复元素多次统计的结果
+                result_df['F'].push(totalIntersection_b_b);
+                // 计算交集并存储结果到H列，按照重复元素多次统计的结果
+                let intersection_count = [...current_b_nums].filter(num => all_a_nums_prev.has(num) && all_b_nums_prev.has(num)).length;
+                result_df['H'].push(intersection_count);
+            } else {
+                // 如果B列当前值为null，对应列结果设为null
+                result_df['D'].push(null);
+                result_df['F'].push(null);
+                result_df['H'].push(null);
+            }
+
             // 先将all_a_nums_prev转换为数组并排序，再拼接成字符串并添加元素个数信息后推送到result_df['C']
             let sortedAll_a_nums_prev = Array.from(all_a_nums_prev).sort((a, b) => a - b);
             result_df['C'].push(`{${sortedAll_a_nums_prev.join(', ')}}: ${all_a_nums_prev.size}`);
@@ -278,43 +287,46 @@ function compareStrings(df) {
 
             // 对result_df['G']的数据进行处理，先过滤出符合条件的元素，再排序，最后拼接成字符串并推送到result_df['G']
             let filteredAndSortedForG = Array.from(all_a_nums_prev)
-               .filter(num => all_b_nums_prev.has(num))
-               .sort((a, b) => a - b);
+                .filter(num => all_b_nums_prev.has(num))
+                .sort((a, b) => a - b);
             result_df['G'].push(`{${filteredAndSortedForG.join(', ')}}`);
-            let b_int_value = parseInt(current_b_str);
-            let remainder_3 = b_int_value % 3;
-            let a = Math.floor(b_int_value / 100);
-            let b = Math.floor((b_int_value % 100) / 10);
-            let c = b_int_value % 10;
-            // 判断大小并填充 M 列
-            result_df['M'].push((0 <= a && a <= 4 && 0 <= b && b <= 4 && 0 <= c && c <= 4) ? '小小小' :
-                     (5 <= a && a <= 9 && 5 <= b && b <= 9 && 5 <= c && c <= 9) ? '大大大' :
-                     `${(0 <= a && a <= 4 ? '小' : '大')}${(0 <= b && b <= 4 ? '小' : '大')}${(0 <= c && c <= 4 ? '小' : '大')}`);
 
-            result_df['L'].push((a + b + c) % 10);
-            let small_count = [a, b, c].filter(x => 0 <= x && x <= 4).length;
-            let large_count = [a, b, c].filter(x => 5 <= x && x <= 9).length;
-            result_df['N'].push(`${small_count}:${large_count}`);
-            // 计算奇偶个数的比例并填充 P 列
-            let odd_count = [a, b, c].filter(x => x % 2 !== 0).length;
-            let even_count = [a, b, c].filter(x => x % 2 === 0).length;
-            result_df['P'].push(`${odd_count}:${even_count}`);
+            if (df['B'][index] !== null) {
+                let b_int_value = parseInt(df['B'][index]);
+                let remainder_3 = b_int_value % 3;
+                let a = Math.floor(b_int_value / 100);
+                let b = Math.floor((b_int_value % 100) / 10);
+                let c = b_int_value % 10;
+                // 判断大小并填充 M 列
+                result_df['M'].push((0 <= a && a <= 4 && 0 <= b && b <= 4 && 0 <= c && c <= 4)? '小小小' :
+                         (5 <= a && a <= 9 && 5 <= b && b <= 9 && 5 <= c && c <= 9)? '大大大' :
+                         `${(0 <= a && a <= 4? '小' : '大')}${(0 <= b && b <= 4? '小' : '大')}${(0 <= c && c <= 4? '小' : '大')}`);
 
-            let o_status = `${(a % 2 === 0) ? '偶' : '奇'}${(b % 2 === 0) ? '偶' : '奇'}${(c % 2 === 0) ? '偶' : '奇'}`;
-            result_df['O'].push(o_status);
+                result_df['L'].push((a + b + c) % 10);
+                let small_count = [a, b, c].filter(x => 0 <= x && x <= 4).length;
+                let large_count = [a, b, c].filter(x => 5 <= x && x <= 9).length;
+                result_df['N'].push(`${small_count}:${large_count}`);
+                // 计算奇偶个数的比例并填充 P 列
+                let odd_count = [a, b, c].filter(x => x % 2 !== 0).length;
+                let even_count = [a, b, c].filter(x => x % 2 === 0).length;
+                result_df['P'].push(`${odd_count}:${even_count}`);
 
-            if (remainder_3 === 0) {
-                result_df['I'].push(remainder_3);
-                result_df['J'].push(null);
-                result_df['K'].push(null);
-            } else if (remainder_3 === 1) {
-                result_df['J'].push(remainder_3);
-                result_df['K'].push(null);
-                result_df['I'].push(null);
-            } else if (remainder_3 === 2) {
-                result_df['K'].push(remainder_3);
-                result_df['J'].push(null);
-                result_df['I'].push(null);
+                let o_status = `${(a % 2 === 0) ? '偶' : '奇'}${(b % 2 === 0) ? '偶' : '奇'}${(c % 2 === 0) ? '偶' : '奇'}`;
+                result_df['O'].push(o_status);
+
+                if (remainder_3 === 0) {
+                    result_df['I'].push(remainder_3);
+                    result_df['J'].push(null);
+                    result_df['K'].push(null);
+                } else if (remainder_3 === 1) {
+                    result_df['J'].push(remainder_3);
+                    result_df['K'].push(null);
+                    result_df['I'].push(null);
+                } else if (remainder_3 === 2) {
+                    result_df['K'].push(remainder_3);
+                    result_df['J'].push(null);
+                    result_df['I'].push(null);
+                }
             }
         }
     }
@@ -323,14 +335,27 @@ function compareStrings(df) {
 }
         // 处理输入与提交数据按钮的点击事件处理函数
         handleButton.addEventListener('click', function () {
-            const aValue = aInput.value;
-            const bValue = bInput.value;
+            let aValue = aInput.value;
+            let bValue = bInput.value;
 
-            // 验证A列和B列输入数据格式是否符合要求
-            if (!isValidThreeDigitInput(aValue) || !isValidThreeDigitInput(bValue)) {
-                alert('请输入长度为3的纯数字字符串');
+        // 验证A列和B列输入数据格式是否符合要求
+        if (!isValidThreeDigitInput(aValue)) {
+            if (aValue === "") {
+                aValue = null;
+            } else {
+                alert('A列输入数据格式错误，请输入长度为3的纯数字字符串，例如：123');
                 return;
             }
+        }
+
+        if (!isValidThreeDigitInput(bValue)) {
+            if (bValue === "") {
+                bValue = null;
+            } else {
+                alert('B列输入数据格式错误，请输入长度为3的纯数字字符串，例如：123');
+                return;
+            }
+        }
 
             // 将符合格式的A列和B列数据分别添加到本地数据结构中
             data['A'].push(aValue);
@@ -341,7 +366,7 @@ function compareStrings(df) {
             bInput.value = "";
 
             // 检查是否已经捕获了足够的数据（A列和B列都有数据）
-            if (data['A'].length === 0 || data['B'].length === 0) {
+            if ((data['A'].length === 0 && aValue === null) || (data['B'].length === 0 && bValue === null)) {
                 alert('请先捕获足够的数据再提交！');
                 return;
             }
@@ -424,7 +449,7 @@ function compareStrings(df) {
         const headerRow = document.createElement('tr');
 
         // 创建表头行，设置各列的标题
-        const headers = ['数', '--试--', '--定--', '试', 'D列', '定', 'F列', '胆', 'H列', '0', '1', '2', '尾值', '大小', '比', '奇偶', '比'];
+        const headers = ['数', '--试--', '--定--', '试', '用试', '定', '用定', '胆', '用胆', '0', '1', '2', '合尾', '小大', '小大', '奇偶', '奇偶'];
         headers.forEach(header => {
             const th = document.createElement('th');
             th.textContent = header;
@@ -456,6 +481,7 @@ function compareStrings(df) {
             const cCell = document.createElement('td');
             cCell.textContent = processedData['C'] && processedData['C'].length > i ? processedData['C'][i] : '';
             cCell.style.backgroundColor = '#bed9d7';
+            cCell.style.textAlign = 'right'; // 设置文本右对齐
             row.appendChild(cCell);
 
             // 创建D列单元格，根据是否存在对应数据进行显示，不存在则显示为空字符串
@@ -468,6 +494,7 @@ function compareStrings(df) {
             const eCell = document.createElement('td');
             eCell.textContent = processedData['E'] && processedData['E'].length > i ? processedData['E'][i] : '';
             eCell.style.backgroundColor = '#bed9d7';
+            eCell.style.textAlign = 'right'; // 设置文本右对齐
             row.appendChild(eCell);
 
             // 创建F列单元格，根据是否存在对应数据进行显示，不存在则显示为空字符串
@@ -480,6 +507,7 @@ function compareStrings(df) {
             const gCell = document.createElement('td');
             gCell.textContent = processedData['G'] && processedData['G'].length > i ? processedData['G'][i] : '';
             gCell.style.backgroundColor = '#bed9d7';
+            gCell.style.textAlign = 'right'; // 设置文本右对齐
             row.appendChild(gCell);
 
             // 创建H列单元格，根据是否存在对应数据进行显示，不存在则显示为空字符串
